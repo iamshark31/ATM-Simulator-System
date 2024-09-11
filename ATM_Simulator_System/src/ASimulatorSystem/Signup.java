@@ -9,16 +9,15 @@ import java.util.*;
 
 public class Signup extends JFrame implements ActionListener{
     
-    JLabel l1,l2,l3,l4,l5,l6,l7,l8,l9,l10,l11,l12,l13,l14,l15;
-    JTextField t1,t2,t3,t4,t5,t6,t7;
-    JRadioButton r1,r2,r3,r4,r5;
+    JLabel l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l13, l12;
+    JTextField t1, t2, t3, t4, t5, t6, t7;
+    JRadioButton r1, r2, r3, r4, r5;
     JButton b;
     JDateChooser dateChooser;
     
-    
     Random ran = new Random();
-    long first4 = (ran.nextLong() % 9000L) + 1000L;
-    String first = "" + Math.abs(first4);
+    long first4 = (Math.abs(ran.nextInt()) % 9000) + 1000;
+    String first = String.valueOf(first4);
     
     Signup(){
         
@@ -61,21 +60,11 @@ public class Signup extends JFrame implements ActionListener{
         l10 = new JLabel("City:");
         l10.setFont(new Font("Raleway", Font.BOLD, 20));
         
-        l11 = new JLabel("Pin Code:");
-        l11.setFont(new Font("Raleway", Font.BOLD, 20));
+        l13 = new JLabel("Pin Code:");  // Changed l11 to l13
+        l13.setFont(new Font("Raleway", Font.BOLD, 20));
         
         l12 = new JLabel("State:");
         l12.setFont(new Font("Raleway", Font.BOLD, 20));
-        
-        l13 = new JLabel("Date");
-        l13.setFont(new Font("Raleway", Font.BOLD, 14));
-        
-        l14 = new JLabel("Month");
-        l14.setFont(new Font("Raleway", Font.BOLD, 14));
-        
-        l15 = new JLabel("Year");
-        l15.setFont(new Font("Raleway", Font.BOLD, 14));
-        
         
         t1 = new JTextField();
         t1.setFont(new Font("Raleway", Font.BOLD, 14));
@@ -97,8 +86,6 @@ public class Signup extends JFrame implements ActionListener{
         
         t7 = new JTextField();
         t7.setFont(new Font("Raleway", Font.BOLD, 14));
-        
-       
         
         b = new JButton("Next");
         b.setFont(new Font("Raleway", Font.BOLD, 14));
@@ -135,10 +122,9 @@ public class Signup extends JFrame implements ActionListener{
         groupstatus.add(r5);
         
         dateChooser = new JDateChooser();
-	//dateChooser.setBorder(new LineBorder(new Color(0, 0, 0), 1, true));
-	dateChooser.setForeground(new Color(105, 105, 105));
-	dateChooser.setBounds(137, 337, 200, 29);
-	add(dateChooser);
+        dateChooser.setForeground(new Color(105, 105, 105));
+        dateChooser.setBounds(137, 337, 200, 29);
+        add(dateChooser);  
         
         setLayout(null);
         l1.setBounds(140,20,600,40);
@@ -162,7 +148,8 @@ public class Signup extends JFrame implements ActionListener{
         l5.setBounds(100,240,200,30);
         add(l5);
         
-        dateChooser.setBounds(300, 240, 400, 30);
+        dateChooser.setBounds(300,240,400,30);
+        add(dateChooser);
         
         l6.setBounds(100,290,200,30);
         add(l6);
@@ -191,8 +178,6 @@ public class Signup extends JFrame implements ActionListener{
         r5.setBounds(635,390,100,30);
         add(r5);
         
-        
-        
         l9.setBounds(100,440,200,30);
         add(l9);
         
@@ -205,8 +190,8 @@ public class Signup extends JFrame implements ActionListener{
         t5.setBounds(300,490,400,30);
         add(t5);
         
-        l11.setBounds(100,540,200,30);
-        add(l11);
+        l13.setBounds(100,540,200,30);  
+        add(l13);
         
         t6.setBounds(300,540,400,30);
         add(t6);
@@ -220,12 +205,12 @@ public class Signup extends JFrame implements ActionListener{
         b.setBounds(620,660,80,30);
         add(b);
         
-        b.addActionListener(this); 
+        b.addActionListener(this);
         
         getContentPane().setBackground(Color.WHITE);
         
         setSize(850,800);
-        setLocation(500,120);
+        setLocation(350,10);
         setVisible(true);
     }
     
@@ -251,32 +236,41 @@ public class Signup extends JFrame implements ActionListener{
         }else if(r5.isSelected()){ 
             marital = "Other";
         }
-           
+            
         String address = t4.getText();
         String city = t5.getText();
         String pincode = t6.getText();
         String state = t7.getText();
         
-
         try{
-           
-            if(t6.getText().equals("")){
+            if(name.equals("") || fname.equals("") || dob.equals("") || email.equals("") || address.equals("") || city.equals("") || pincode.equals("") || state.equals("")){
                 JOptionPane.showMessageDialog(null, "Fill all the required fields");
             }else{
                 Conn c1 = new Conn();
-                String q1 = "insert into signup values('"+formno+"','"+name+"','"+fname+"','"+dob+"','"+gender+"','"+email+"','"+marital+"','"+address+"','"+city+"','"+pincode+"','"+state+"')";
-                c1.s.executeUpdate(q1);
+                String query = "INSERT INTO signup (formno, name, fname, dob, gender, email, marital, address, city, pincode, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement ps = c1.c.prepareStatement(query);
+                ps.setString(1, formno);
+                ps.setString(2, name);
+                ps.setString(3, fname);
+                ps.setString(4, dob);
+                ps.setString(5, gender);
+                ps.setString(6, email);
+                ps.setString(7, marital);
+                ps.setString(8, address);
+                ps.setString(9, city);
+                ps.setString(10, pincode);
+                ps.setString(11, state);
+                ps.executeUpdate();
+                
+                JOptionPane.showMessageDialog(null, "Sign up successful!");
                 
                 new Signup2(first).setVisible(true);
                 setVisible(false);
             }
-            
         }catch(Exception e){
-             e.printStackTrace();
+            e.printStackTrace();
         }
-        
     }
-    
     
     public static void main(String[] args){
         new Signup().setVisible(true);
