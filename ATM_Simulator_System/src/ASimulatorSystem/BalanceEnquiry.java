@@ -44,7 +44,7 @@ class BalanceEnquiry extends JFrame implements ActionListener {
         try {
             Conn c1 = new Conn();
             String query = "SELECT * FROM bank WHERE pin = ?";
-            try (PreparedStatement pst = c1.con.prepareStatement(query)) {
+            try (PreparedStatement pst = c1.c.prepareStatement(query)) {
                 pst.setString(1, pin);
                 ResultSet rs = pst.executeQuery();
                 while (rs.next()) {
