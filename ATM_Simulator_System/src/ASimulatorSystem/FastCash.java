@@ -2,15 +2,14 @@ package ASimulatorSystem;
 
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
 import java.sql.*;
-import java.util.Date;
+import java.text.SimpleDateFormat;
+import javax.swing.*;
 
 public class FastCash extends JFrame implements ActionListener {
 
-    JLabel l1, l2;
-    JButton b1, b2, b3, b4, b5, b6, b7, b8;
-    JTextField t1;
+    JLabel l1;
+    JButton b1, b2, b3, b4, b5, b6, b7;
     String pin;
 
     FastCash(String pin) {
@@ -18,11 +17,12 @@ public class FastCash extends JFrame implements ActionListener {
         ImageIcon i1 = new ImageIcon(ClassLoader.getSystemResource("ASimulatorSystem/icons/atm.jpg"));
         Image i2 = i1.getImage().getScaledInstance(1000, 1180, Image.SCALE_DEFAULT);
         ImageIcon i3 = new ImageIcon(i2);
-        JLabel l3 = new JLabel(i3);
-        l3.setBounds(0, 0, 960, 1080);
-        add(l3);
+        JLabel backgroundLabel = new JLabel(i3);
+        backgroundLabel.setBounds(0, 0, 960, 1080);
+        setLayout(null);
+        add(backgroundLabel);
 
-        l1 = new JLabel("SELECT WITHDRAWL AMOUNT");
+        l1 = new JLabel("SELECT WITHDRAWAL AMOUNT");
         l1.setForeground(Color.WHITE);
         l1.setFont(new Font("System", Font.BOLD, 16));
 
@@ -34,31 +34,29 @@ public class FastCash extends JFrame implements ActionListener {
         b6 = new JButton("Rs 10000");
         b7 = new JButton("BACK");
 
-        setLayout(null);
-
         l1.setBounds(235, 400, 700, 35);
-        l3.add(l1);
+        backgroundLabel.add(l1);
 
         b1.setBounds(170, 499, 150, 35);
-        l3.add(b1);
+        backgroundLabel.add(b1);
 
         b2.setBounds(390, 499, 150, 35);
-        l3.add(b2);
+        backgroundLabel.add(b2);
 
         b3.setBounds(170, 543, 150, 35);
-        l3.add(b3);
+        backgroundLabel.add(b3);
 
         b4.setBounds(390, 543, 150, 35);
-        l3.add(b4);
+        backgroundLabel.add(b4);
 
         b5.setBounds(170, 588, 150, 35);
-        l3.add(b5);
+        backgroundLabel.add(b5);
 
         b6.setBounds(390, 588, 150, 35);
-        l3.add(b6);
+        backgroundLabel.add(b6);
 
         b7.setBounds(390, 633, 150, 35);
-        l3.add(b7);
+        backgroundLabel.add(b7);
 
         b1.addActionListener(this);
         b2.addActionListener(this);
@@ -72,45 +70,62 @@ public class FastCash extends JFrame implements ActionListener {
         setLocation(500, 0);
         setUndecorated(true);
         setVisible(true);
-
     }
 
     public void actionPerformed(ActionEvent ae) {
         try {
-            String amount = ((JButton)ae.getSource()).getText().substring(3); //k
+            String amount = ((JButton) ae.getSource()).getText().substring(3);
+            int withdrawalAmount = Integer.parseInt(amount);
             Conn c = new Conn();
-            ResultSet rs = c.s.executeQuery("select * from bank where pin = '"+pin+"'");
             int balance = 0;
-            while (rs.next()) {
-                if (rs.getString("mode").equals("Deposit")) {
-                    balance += Integer.parseInt(rs.getString("amount"));
-                } else {
-                    balance -= Integer.parseInt(rs.getString("amount"));
+            String query = "SELECT * FROM bank WHERE pin = ?";
+            try (PreparedStatement pst = c.c.prepareStatement(query)) {
+                pst.setString(1, pin);
+                ResultSet rs = pst.executeQuery();
+                while (rs.next()) {
+                    if ("Deposit".equals(rs.getString("mode"))) {
+                        balance += Integer.parseInt(rs.getString("amount"));
+                    } else {
+                        balance -= Integer.parseInt(rs.getString("amount"));
+                    }
                 }
-            } String num = "17";
-            if (ae.getSource() != b7 && balance < Integer.parseInt(amount)) {
-                JOptionPane.showMessageDialog(null, "Insuffient Balance");
-                return;
             }
 
             if (ae.getSource() == b7) {
                 this.setVisible(false);
                 new Transactions(pin).setVisible(true);
-            }else{
-                Date date = new Date();
-                c.s.executeUpdate("insert into bank values('"+pin+"', '"+date+"', 'Withdrawl', '"+amount+"')");
-                JOptionPane.showMessageDialog(null, "Rs. "+amount+" Debited Successfully");
-                    
-                setVisible(false);
-                new Transactions(pin).setVisible(true);
+                return;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
+            if (balance < withdrawalAmount) {
+                JOptionPane.showMessageDialog(null, "Insufficient Balance");
+                return;
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String date = sdf.format(new java.util.Date());
+            String insertQuery = "INSERT INTO bank (pin, date, mode, amount) VALUES (?, ?, 'Withdrawal', ?)";
+            try (PreparedStatement pst = c.c.prepareStatement(insertQuery)) {
+                pst.setString(1, pin);
+                pst.setString(2, date);
+                pst.setInt(3, withdrawalAmount);
+                pst.executeUpdate();
+            }
+
+            JOptionPane.showMessageDialog(null, "Rs. " + amount + " Debited Successfully");
+            setVisible(false);
+            new Transactions(pin).setVisible(true);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Invalid amount format", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public static void main(String[] args) {
-        new FastCash("").setVisible(true);
+        new FastCash("defaultPIN").setVisible(true); // Replace with actual PIN if needed
     }
 }
